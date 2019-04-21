@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <link rel="stylesheet" href="./lib/element-ui/index.css">
+    <style>
+        .my-form {
+            max-width: 670px;
+        }
+        .detail-table {
+            width: 300px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <el-form label-width="100px" inline class="my-form">
+            <el-form-item label="当前储蓄">
+                <el-input-number v-model="currentSavings" :controls="false"></el-input-number>
+            </el-form-item>
+            <el-form-item label="税后月薪">
+                <el-input-number v-model="monthPay" :controls="false"></el-input-number>
+            </el-form-item>
+            <el-form-item label="房租">
+                <el-input-number v-model="rent" :controls="false"></el-input-number>
+            </el-form-item>
+            <el-form-item label="消费">
+                <el-input-number v-model="consume" :controls="false"></el-input-number>
+            </el-form-item>
+            <el-form-item label="每月储蓄">
+                <span>{{monthSavings}}</span>
+            </el-form-item>
+            <div></div>
+            <el-form-item label="十年">
+                <el-switch v-model="isTen"></el-switch>
+            </el-form-item>
+            <div></div>
+            <el-form-item label="开始时间">
+                <el-date-picker type="date" v-model="startDate"></el-date-picker>
+            </el-form-item>
+            <el-form-item label="结束时间">
+                <el-date-picker v-if="isTen" type="date" v-model="endDateTen"></el-date-picker>
+                <el-date-picker v-else type="date" v-model="endDate"></el-date-picker>
+            </el-form-item>
+            <el-form-item label="年化 %">
+                <el-input-number v-model="annualRate" :controls="false"></el-input-number>
+            </el-form-item>
+            <div></div>
+            <el-form-item label="到期储蓄">
+                <span>{{endSavings}}</span>
+            </el-form-item>
+            <div></div>
+        </el-form>
+        <el-switch v-model="showDetail" inactive-text="显示详情"></el-switch>
+        <div v-show="showDetail" class="detail-table">
+            <el-table :data="allSavings" height="300px" size="mini">
+                <el-table-column label="时间" width="100px">
+                    <template slot-scope="scope">
+                        <p>{{moment(scope.row.date).format('YYYY-MM-DD')}}</p>
+                    </template>
+                </el-table-column>
+                <el-table-column label="预期资产" width="100px">
+                    <template slot-scope="scope">
+                        <p>{{getRoundVal(scope.row.value)}}</p>
+                    </template>
+                </el-table-column>
+                <el-table-column label="总和" width="100px">
+                    <template slot-scope="scope">
+                        <p>{{getRoundVal(scope.row.value + scope.row.accuFund)}}</p>
+                    </template>
+                </el-table-column>
+            </el-table>
+        </div>
+    </div>
+    <script src="./lib/vue/vue.js"></script>
+    <script src="./lib/element-ui/index.js"></script>
+    <script src="./lib/moment/moment.js"></script>
+    <script src="./lib/lodash/lodash.js"></script>
+    <script>
+        let vm = new Vue({
+            el: '#app',
+            data() {
+                return {
+                    currentSavings: 0,
+                    monthPay: 10000,
+                    rent: 2000,
+                    consume: 2000,
+                    startDate: '2019-04-01',
+                    endDate: '2024-04-01',
+                    endDateTen: '2029-04-01',
+                    isTen: false,
+                    annualRate: 15,
+                    showDetail: true,
+                    moment: window.moment,
+                    monthAccuFund: 0,
+                    currAccuFund: 0
+                };
+            },
+            computed: {
+                monthSavings() {
+                    return this.monthPay - this.rent - this.consume;
+                },
+                innerDate() {
+                    return this.isTen ? this.endDateTen : this.endDate;
+                },
+                allSavings() {
+                    let savings = [{
+                        date: this.startDate,
+                        value: this.currentSavings,
+                        accuFund: this.currAccuFund
+                    }];
+                    let format = 'YYYY-MM-DD';
+                    let startDate = moment(this.startDate);
+                    startDate = startDate.add(1, 'M');
+                    endDate = moment(this.innerDate).add(1, 'd');
+                    while (moment.max(startDate, endDate).format(format) !== startDate.format(format)) {
+                        let lastItem = savings[savings.length - 1];
+                        let lastSavings = lastItem.value;
+                        let lastAccuFund = lastItem.accuFund;
+                        let currSavings = lastSavings * (1 + this.monthRate) + this.monthSavings;
+                        let currAccuFund = lastAccuFund + this.monthAccuFund;
+                        savings.push({
+                            date: startDate.format(format),
+                            value: currSavings,
+                            accuFund: currAccuFund
+                        });
+                        startDate = startDate.add(1, 'M');
+                    }
+                    return savings;
+                },
+                endSavings() {
+                    let allSavings = this.allSavings;
+                    return _.round(allSavings[allSavings.length - 1].value, 2);
+                },
+                endAccuFund() {
+                    let allSavings = this.allSavings;
+                    return allSavings[allSavings.length - 1].accuFund;
+                },
+                monthRate() {
+                    return Math.pow((1 + this.annualRate / 100), 1 / 12) - 1;
+                },
+                jobSavings() {
+                    return this.monthSavings * (this.allSavings.length - 1);
+                },
+                originSavings() {
+                    return this.currentSavings + this.jobSavings;
+                },
+                profits() {
+                    return this.getRoundVal(this.endSavings - this.originSavings);
+                }
+            },
+            methods: {
+                getRoundVal(val) {
+                    return _.round(val, 2);
+                }
+            }
+        })
+    </script>
+</body>
+
+</html>
