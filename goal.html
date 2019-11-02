@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Financial Independence and Early Retirement</title>
+    <link rel="stylesheet" href="./lib/element-ui/index.css">
+    <style>
+        .my-form {
+            max-width: 670px;
+        }
+        .detail-table {
+            width: 300px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <p>根据结余率、年化计算财务自由需要的时间
+            <br>
+            这里的财务自由仅指积累的资产每月产生的现金流等于工资
+            <br>
+            月薪多少并不影响计算，以7000月薪计算
+        <p>
+        <el-form label-width="100px" inline class="my-form">
+            <el-form-item label="月薪">
+                <el-input-number v-model="monthPay" :controls="false"></el-input-number>
+            </el-form-item>
+            <el-form-item label="结余率">
+                <el-input-number v-model="savingRate" :controls="false"></el-input-number>
+            </el-form-item>
+            <el-form-item label="年化">
+                <el-input-number v-model="annualRate" :controls="false"></el-input-number>
+            </el-form-item>
+            <div></div>
+        </el-form>
+        <p>月利率为：{{this.getRoundVal(this.monthRate * 100)}}
+            <br>
+            目标储蓄金额：{{this.getRoundVal(this.targetSaving)}}，实际储蓄金额：{{this.getRoundVal(this.savings[this.savings.length - 1])}}
+            <br>
+            需要时间：{{targetYear}}
+        </p>
+        <el-alert
+            :title="`恭喜！${targetYear}年后你就财务自由了`"
+            type="success"
+            :closable="false">
+        </el-alert>
+
+    </div>
+    <script src="./lib/vue/vue.js"></script>
+    <script src="./lib/element-ui/index.js"></script>
+    <script src="./lib/moment/moment.js"></script>
+    <script src="./lib/lodash/lodash.js"></script>
+    <script>
+        let vm = new Vue({
+            el: '#app',
+            data() {
+                return {
+                    monthPay: 7000,
+                    annualRate: 10,
+                    savingRate: 50,
+                    moment: window.moment,
+                };
+            },
+            computed: {
+                monthRate() {
+                    return Math.pow((1 + this.annualRate / 100), 1 / 12) - 1;
+                },
+                monthSaving() {
+                    return this.monthPay * this.savingRate / 100;
+                },
+                targetSaving() {
+                    return this.monthPay / this.monthRate;
+                },
+                savings() {
+                    let savings = [3500];
+                    while (savings[savings.length - 1] < this.targetSaving) {
+                        let lastSaving = savings[savings.length - 1];
+                        let nextSaving = lastSaving * (1 + this.monthRate) + this.monthSaving;
+                        savings.push(nextSaving);
+                    }
+                    return savings;
+                },
+                targetMonth() {
+                    return this.savings.length;
+                },
+                targetYear() {
+                    let year = Math.floor(this.targetMonth / 12);
+                    let month = Math.floor(this.targetMonth - year * 12);
+                    return `${year}年${month}月`;
+                }
+            },
+            methods: {
+                getRoundVal(val) {
+                    return _.round(val, 2);
+                }
+            }
+        })
+    </script>
+</body>
+
+</html>
