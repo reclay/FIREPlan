@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible"
+          content="ie=edge">
+    <title>Financial Independence and Early Retirement</title>
+    <link rel="stylesheet"
+          href="./lib/element-ui/index.css">
+    <style>
+        .my-form {
+            max-width: 670px;
+        }
+
+        .detail-table {
+            width: 300px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <el-form label-width="100px"
+                 class="my-form">
+            <el-form-item v-for="vacation in innerVacations"
+                :key="vacation.timr"
+                :label="vacation.label">
+                <span>{{vacation.countDown}}天</span>
+            </el-form-item>
+        </el-form>
+    </div>
+    <script src="./lib/vue/vue.js"></script>
+    <script src="./lib/element-ui/index.js"></script>
+    <script src="./lib/moment/moment.js"></script>
+    <script src="./lib/lodash/lodash.js"></script>
+    <script>
+        let vm = new Vue({
+            el: '#app',
+            data() {
+                return {
+                    vacations: [{
+                        label: '五一',
+                        time: '2020-05-01'
+                    }, {
+                        label: '端午',
+                        time: '2020-06-25'
+                    }, {
+                        label: '国庆中秋',
+                        time: '2020-10-01'
+                    }, {
+                        label: '元旦',
+                        time: '2021-01-01'
+                    }]
+                };
+            },
+            computed: {
+                innerVacations() {
+                    let now = moment();
+                    let innerVacations = this.vacations.map(item => {
+                        let countDown = -now.diff(item.time, 'days');
+                        return Object.assign({}, item, {
+                            countDown
+                        });
+                    });
+                    return innerVacations.filter(item => item.countDown > 0);
+                }
+            }
+        })
+    </script>
+</body>
+
+</html>
