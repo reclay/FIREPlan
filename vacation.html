@@ -50,14 +50,14 @@
                     }, {
                         label: '春节',
                         time: '2021-02-11'
-                    }]
+                    }],
+                    now: moment()
                 };
             },
             computed: {
                 innerVacations() {
-                    let now = moment();
                     let innerVacations = this.vacations.map(item => {
-                        let countDown = -now.diff(item.time, 'days');
+                        let countDown = -this.now.diff(item.time, 'days');
                         return Object.assign({}, item, {
                             countDown
                         });
